@@ -56,7 +56,7 @@ export default class GlobalTick extends EventTarget {
     this.#intervals[uuid] = {
       interval,
       callback,
-      lastRun: performance.now(),
+      lastInterval: performance.now(),
       repeat: true
     };
     return uuid;
@@ -66,20 +66,21 @@ export default class GlobalTick extends EventTarget {
    * Remove an interval.
    * @param {string} uuid - The handle for the interval.
    */
-  removeInterval(uuid) {
+  clearInterval(uuid) {
     delete this.#intervals[uuid];
   }
 
   #tick() {
+    const now = performance.now();
     this.dispatchEvent(new CustomEvent("TICK", {detail: {
-      elapsedTime: performance.now() - this.#start
+      elapsedTime: now - this.#start
     }}));
 
     for (const uuid in this.#intervals) {
       const interval = this.#intervals[uuid];
-      if (performance.now() - interval.lastRun >= interval.interval) {
+      if (now - interval.lastInterval >= interval.interval) {
         interval.callback();
-        interval.lastRun = performance.now();
+        interval.lastInterval = interval.lastInterval + interval.interval * Math.floor((now - interval.lastInterval) / interval.interval);
         if (!interval.repeat) {
           delete this.#intervals[uuid];
         }
